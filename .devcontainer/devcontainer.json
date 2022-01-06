@@ -1,5 +1,5 @@
 {
-	"name": "Node.js & TypeScript",
+	"name": "Hashicorp Vault to env",
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {

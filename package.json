@@ -1,0 +1,252 @@
+{
+  "name": "vault-to-env",
+  "version": "0.0.1",
+  "publisher": "telmoandrade",
+  "engines": {
+    "vscode": "^1.63.0"
+  },
+  "license": "MIT",
+  "displayName": "HashiCorp Vault to env",
+  "description": "Updating .env file using HashiCorp Vault",
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "HashiCorp",
+    "Vault",
+    "secret",
+    "password",
+    "encrypt"
+  ],
+  "homepage": "https://github.com/telmoandrade/vscode-vault/",
+  "bugs": {
+    "url": "https://github.com/telmoandrade/vscode-vault/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/telmoandrade/vscode-vault.git"
+  },
+  "galleryBanner": {},
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:vault.env.commands.configure",
+    "onView:vault.env.views.vaultView"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vault-env-activitybar-vaults-explorer",
+          "title": "Vaults Explorer",
+          "icon": "resources/vaults-explorer.svg"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "vault.env.commands.configure",
+          "group": "navigation",
+          "when": "view == vault.env.views.vaultView"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vault.env.commands.connect",
+          "group": "inline@1",
+          "when": "view == vault.env.views.vaultView && viewItem == server-disconnected"
+        },
+        {
+          "command": "vault.env.commands.refresh",
+          "group": "inline@1",
+          "when": "view == vault.env.views.vaultView && viewItem == server-connected || view == vault.env.views.vaultView && viewItem == mount"
+        },
+        {
+          "command": "vault.env.commands.disconnect",
+          "group": "inline@2",
+          "when": "view == vault.env.views.vaultView && viewItem == server-connected"
+        },
+        {
+          "command": "vault.env.commands.write",
+          "group": "inline@",
+          "when": "view == vault.env.views.vaultView && viewItem == secret"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vault.env.commands.configure",
+        "title": "Configure Vault connections",
+        "category": "Vault-Env",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "vault.env.commands.connect",
+        "title": "Connect to Vault",
+        "category": "Vault-Env",
+        "icon": {
+          "light": "resources/light/command/connect.svg",
+          "dark": "resources/dark/command/connect.svg"
+        }
+      },
+      {
+        "command": "vault.env.commands.disconnect",
+        "title": "Disconnect from Vault",
+        "category": "Vault-Env",
+        "icon": {
+          "light": "resources/light/command/disconnect.svg",
+          "dark": "resources/dark/command/disconnect.svg"
+        }
+      },
+      {
+        "command": "vault.env.commands.refresh",
+        "title": "Refresh data",
+        "category": "Vault-Env",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "vault.env.commands.write",
+        "title": "Write .env from Vault",
+        "category": "Vault-Env",
+        "icon": "$(link-external)"
+      }
+    ],
+    "views": {
+      "vault-env-activitybar-vaults-explorer": [
+        {
+          "id": "vault.env.views.vaultView",
+          "name": ""
+        }
+      ]
+    },
+    "configuration": [
+      {
+        "title": "Vaults Env",
+        "properties": {
+          "vault.env.connections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "endpoint": {
+                  "type": "string",
+                  "pattern": "^https?://(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.)){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|\\S*)(:\\d*)?/?$",
+                  "patternErrorMessage": "Not a valid URL"
+                },
+                "auth": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "method": {
+                          "type": "string",
+                          "enum": [
+                            "token"
+                          ]
+                        },
+                        "token": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "token"
+                      ],
+                      "default": {
+                        "method": "token",
+                        "token": ""
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "method": {
+                          "type": "string",
+                          "enum": [
+                            "username"
+                          ]
+                        },
+                        "mountPoint": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "username": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "password": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "mountPoint",
+                        "username",
+                        "password"
+                      ],
+                      "default": {
+                        "method": "username",
+                        "mountPoint": "userpass",
+                        "username": "",
+                        "password": ""
+                      }
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "endpoint",
+                "auth"
+              ],
+              "default": {
+                "name": "",
+                "endpoint": "",
+                "auth": {
+                  "method": ""
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "badges": [],
+  "markdown": "github",
+  "devDependencies": {
+    "@types/glob": "^7.1.4",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "14.x",
+    "@types/request": "^2.48.7",
+    "@types/validator": "^13.7.1",
+    "@types/vscode": "^1.63.0",
+    "@typescript-eslint/eslint-plugin": "^5.1.0",
+    "@typescript-eslint/parser": "^5.1.0",
+    "@vscode/test-electron": "^1.6.2",
+    "eslint": "^8.1.0",
+    "glob": "^7.1.7",
+    "mocha": "^9.1.3",
+    "typescript": "^4.4.4"
+  },
+  "icon": "icon.png",
+  "dependencies": {
+    "node-vault": "^0.9.22",
+    "validator": "^13.7.0"
+  }
+}
