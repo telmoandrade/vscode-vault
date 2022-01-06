@@ -154,7 +154,7 @@ export class VaultConnection implements vscode.Disposable {
                 }
 
                 return value;
-            }
+            };
 
             const step = (object: any, prev?: string): void => {
                 Object.keys(object).forEach((key) => {

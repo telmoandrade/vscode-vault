@@ -6,7 +6,7 @@
 !LICENSE
 !README.md
 !icon.png
-!out/**
+!dist/extension.js
 !package-lock.json
 !package.json
 !resources/**/*.svg
