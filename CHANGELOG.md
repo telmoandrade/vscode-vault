@@ -4,6 +4,11 @@ All notable changes to the "vault-to-env" extension will be documented in this f
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 0.0.3
+
+- Ability to write the .env file in the selected workspace
+- Support for multiple workspaces
+
 ## 0.0.2
 
 - Build with webpack

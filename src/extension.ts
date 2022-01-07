@@ -48,20 +48,58 @@ export function activate(context: vscode.ExtensionContext) {
 	const writeFn = (treeItem: view.VaultViewSecretTreeItem) =>
 		treeItem.read()
 			.then(async (data) => {
-				const envUri = vscode.Uri.file(context.asAbsolutePath('.env'));
-				let content = '';
-				try {
-					const contentEncoded = await vscode.workspace.fs.readFile(envUri);
-					content = new TextDecoder('utf-8').decode(contentEncoded);
+				const contet = `#VaultEnv ==> ${treeItem.parent?.parent?.label} -> ${treeItem.parent?.label} -> ${treeItem.label} -> ${new Date().toISOString()}\n\n${data.map(m => `${m.key}=${m.value}`).join('\n')}\n`;
 
-				} catch (error) { }
+				const newFile = async () => {
+					const openTextDocument = await vscode.workspace.openTextDocument({ content: contet, language: 'dotenv' });
+					vscode.window.showTextDocument(openTextDocument);
+				};
 
-				content = content +
-					`\n\n#VaultEnv ==> ${treeItem.parent?.parent?.label} -> ${treeItem.parent?.label} -> ${treeItem.label} -> ${new Date().toISOString()}\n\n`+
-					data.map(m => `${m.key}=${m.value}`).join('\n');
+				if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+					newFile();
+					return;
+				}
 
-				await vscode.workspace.fs.writeFile(envUri, new TextEncoder().encode(content.trim() + '\n'));
-				vscode.window.showTextDocument(envUri);
+				let workspaceFoldersUri: vscode.Uri | undefined = undefined;
+				if (vscode.workspace.workspaceFolders.length === 1) {
+					workspaceFoldersUri = vscode.workspace.workspaceFolders[0].uri;
+				} else {
+					const activeTextEditor = vscode.window.activeTextEditor;
+					if (activeTextEditor) {
+						workspaceFoldersUri = vscode.workspace.getWorkspaceFolder(activeTextEditor.document.uri)?.uri;
+					}
+
+					if (!workspaceFoldersUri) {
+						const quickPick = await vscode.window.showQuickPick(
+							vscode.workspace.workspaceFolders.map(m => ({
+								label: m.name,
+								target: m.uri,
+							})),
+							{ placeHolder: 'Select workspace.' });
+
+						if (!quickPick) {
+							return;
+						}
+						workspaceFoldersUri = quickPick.target;
+					}
+				}
+
+				if (workspaceFoldersUri) {
+					const envUri = vscode.Uri.joinPath(workspaceFoldersUri, '.env');
+					let newLines = '';
+					try {
+						await vscode.workspace.fs.stat(envUri);
+						newLines = '\n\n';
+					} catch {
+						await vscode.workspace.fs.writeFile(envUri, Buffer.from('', 'utf8'));
+					}
+
+					await vscode.window.showTextDocument(envUri);
+					const activeTextEditor = vscode.window.activeTextEditor;
+					await activeTextEditor?.edit(editBuilder => {
+						editBuilder.insert(activeTextEditor.document.positionAt(activeTextEditor.document.getText().length), newLines + contet);
+					});
+				}
 			})
 			.catch((err: Error) => vscode.window.showErrorMessage(`Unable to write .env from Vault (${err.message})`));
 

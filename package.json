@@ -1,6 +1,6 @@
 {
   "name": "vault-to-env",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "telmoandrade",
   "engines": {
     "vscode": "^1.63.0"
