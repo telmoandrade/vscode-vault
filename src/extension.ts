@@ -48,15 +48,29 @@ export function activate(context: vscode.ExtensionContext) {
 	const writeFn = (treeItem: view.VaultViewSecretTreeItem) =>
 		treeItem.read()
 			.then(async (data) => {
-				const contet = `#VaultEnv ==> ${treeItem.parent?.parent?.label} -> ${treeItem.parent?.label} -> ${treeItem.label} -> ${new Date().toISOString()}\n\n${data.map(m => `${m.key}=${m.value}`).join('\n')}\n`;
+				const addContent = async (textEditor?: vscode.TextEditor) => {
+					await textEditor?.edit(editBuilder => {
+						const length = textEditor.document.getText().length;
+						const positionAt = textEditor.document.positionAt(length);
 
-				const newFile = async () => {
-					const openTextDocument = await vscode.workspace.openTextDocument({ content: contet, language: 'dotenv' });
-					vscode.window.showTextDocument(openTextDocument);
+						const eol = textEditor.document.eol === vscode.EndOfLine.LF ? '\n' : '\r\n';
+
+						let value = length > 0 ? eol + eol : "";
+						value += `#VaultEnv ==> ${treeItem.parent?.parent?.label} -> ${treeItem.parent?.label} -> ${treeItem.label} -> ${new Date().toISOString()}`;
+						value += eol + eol;
+						value += `${data.map(m => `${m.key}=${m.value}`).join(eol)}${eol}`;
+
+						editBuilder.insert(positionAt, value);
+
+						const range = new vscode.Range(positionAt, positionAt);
+						textEditor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+					});
 				};
 
 				if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-					newFile();
+					const openTextDocument = await vscode.workspace.openTextDocument({ content: '', language: 'dotenv' });
+					const textEditor = await vscode.window.showTextDocument(openTextDocument);
+					await addContent(textEditor);
 					return;
 				}
 
@@ -86,19 +100,14 @@ export function activate(context: vscode.ExtensionContext) {
 
 				if (workspaceFoldersUri) {
 					const envUri = vscode.Uri.joinPath(workspaceFoldersUri, '.env');
-					let newLines = '';
 					try {
 						await vscode.workspace.fs.stat(envUri);
-						newLines = '\n\n';
 					} catch {
 						await vscode.workspace.fs.writeFile(envUri, Buffer.from('', 'utf8'));
 					}
 
-					await vscode.window.showTextDocument(envUri);
-					const activeTextEditor = vscode.window.activeTextEditor;
-					await activeTextEditor?.edit(editBuilder => {
-						editBuilder.insert(activeTextEditor.document.positionAt(activeTextEditor.document.getText().length), newLines + contet);
-					});
+					const textEditor = await vscode.window.showTextDocument(envUri);
+					await addContent(textEditor);
 				}
 			})
 			.catch((err: Error) => vscode.window.showErrorMessage(`Unable to write .env from Vault (${err.message})`));

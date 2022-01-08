@@ -1,6 +1,6 @@
 {
   "name": "vault-to-env",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "telmoandrade",
   "engines": {
     "vscode": "^1.63.0"
@@ -28,6 +28,16 @@
   },
   "galleryBanner": {},
   "main": "./dist/extension.js",
+	"extensionKind": [
+		"ui",
+		"workspace"
+	],
+	"capabilities": {
+		"virtualWorkspaces": true,
+		"untrustedWorkspaces": {
+			"supported": true
+		}
+	},
   "activationEvents": [
     "onCommand:vault.env.commands.configure",
     "onView:vault.env.views.vaultView"
