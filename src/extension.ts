@@ -1,6 +1,5 @@
 'use strict';
 
-import { TextDecoder, TextEncoder } from 'util';
 import * as vscode from 'vscode';
 
 import * as model from './model';
@@ -60,10 +59,10 @@ export function activate(context: vscode.ExtensionContext) {
 						value += eol + eol;
 						value += `${data.map(m => `${m.key}=${m.value}`).join(eol)}${eol}`;
 
-						editBuilder.insert(positionAt, value);
-
 						const range = new vscode.Range(positionAt, positionAt);
 						textEditor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+
+						editBuilder.insert(positionAt, value);
 					});
 				};
 
