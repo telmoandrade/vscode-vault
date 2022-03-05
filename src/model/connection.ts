@@ -102,9 +102,9 @@ export class VaultConnection implements vscode.Disposable {
             }));
     }
 
-    async secrets(vaultMount: model.VaultMount): Promise<model.VaultSecret[]> {
+    async secrets(vaultMount: model.VaultMount, subPath: string): Promise<model.VaultSecret[]> {
         const path = vaultMount.type === 'kv' && vaultMount.version === '2' ?
-            `${vaultMount.name}/metadata/`
+            `${vaultMount.name}/metadata/${subPath}`
             : vaultMount.name;
 
         const secrets: any = await this.vaultClient?.list(path).catch(err => {
