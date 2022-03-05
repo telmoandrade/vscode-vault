@@ -9,7 +9,9 @@
 	"settings": {},
 	"extensions": [
 		"dbaeumer.vscode-eslint",
-    	"amodio.tsl-problem-matcher"
+    	"amodio.tsl-problem-matcher",
+		"eamodio.gitlens",
+		"mhutchie.git-graph"
 	],
 	"remoteUser": "node"
 }
