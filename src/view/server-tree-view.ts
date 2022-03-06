@@ -51,7 +51,7 @@ export class VaultViewServerTreeItem extends VaultViewTreeItem {
             this.children = undefined;
             for (const mount of mounts) {
                 const secretView = oldMounts?.find(f => f.label === mount.name);
-                this.addChild(secretView || new VaultViewMountTreeItem(mount, this));
+                this.addChild(secretView || new VaultViewMountTreeItem(mount, this, 0));
             }
         } catch (err: unknown) {
             this.iconPath = VaultViewServerTreeItem.WARNING_ICON;

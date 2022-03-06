@@ -6,8 +6,8 @@ import { VaultViewEmptyTreeItem } from './empty-tree-view';
 import { VaultViewSecretTreeItem } from './secret-tree-view';
 
 export class VaultViewMountTreeItem extends VaultViewTreeItem {
-    constructor(private _vaultMount: model.VaultMount, parent: VaultViewTreeItem) {
-        super(_vaultMount.label, parent);
+    constructor(private _vaultMount: model.VaultMount, parent: VaultViewTreeItem, priorityOrder: number) {
+        super(_vaultMount.label, parent, priorityOrder);
 
         this.contextValue = 'mount';
         this.iconPath = new vscode.ThemeIcon('archive');
@@ -36,9 +36,9 @@ export class VaultViewMountTreeItem extends VaultViewTreeItem {
                     if (secret.name.match(/\/$/)) {
                         const vaultMount = { ...this._vaultMount, label: secret.name };
                         vaultMount.subFolder += secret.name;
-                        this.addChild(secretView || new VaultViewMountTreeItem(vaultMount, this));
+                        this.addChild(secretView || new VaultViewMountTreeItem(vaultMount, this, 0));
                     } else {
-                        this.addChild(secretView || new VaultViewSecretTreeItem(secret, this));
+                        this.addChild(secretView || new VaultViewSecretTreeItem(secret, this, 1));
                     }
                 }
             }
