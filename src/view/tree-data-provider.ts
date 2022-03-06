@@ -8,13 +8,13 @@ import { VaultViewTreeItem } from './tree-item';
 import { VaultViewServerTreeItem } from './server-tree-view';
 
 export class VaultViewTreeDataProvider implements vscode.TreeDataProvider<VaultViewTreeItem> {
-    private vaultViewServerTreeItens: VaultViewServerTreeItem[] = [];
+    private _vaultViewServerTreeItens: VaultViewServerTreeItem[] = [];
     private _onDidChangeTreeData = new vscode.EventEmitter<VaultViewTreeItem | undefined | null | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
     /* eslint-disable @typescript-eslint/naming-convention */
-    private validateIsEmptyOptions = { ignore_whitespace: true };
-    private validadeIsURLOptions = {
+    private _validateIsEmptyOptions = { ignore_whitespace: true };
+    private _validadeIsURLOptions = {
         require_protocol: true,
         disallow_auth: true,
         protocols: ['http', 'https'],
@@ -24,7 +24,7 @@ export class VaultViewTreeDataProvider implements vscode.TreeDataProvider<VaultV
 
     set setVaultConfigurations(vaultConfigurations: model.VaultConfiguration[] | undefined) {
         if (!Array.isArray(vaultConfigurations)) {
-            this.vaultViewServerTreeItens = [];
+            this._vaultViewServerTreeItens = [];
             this._onDidChangeTreeData.fire();
             return;
         }
@@ -32,11 +32,11 @@ export class VaultViewTreeDataProvider implements vscode.TreeDataProvider<VaultV
         const validVaultConfigurations = vaultConfigurations
             .filter(f => {
                 try {
-                    if (validator.isEmpty(f.name, this.validateIsEmptyOptions)) {
+                    if (validator.isEmpty(f.name, this._validateIsEmptyOptions)) {
                         return false;
                     }
 
-                    if (!validator.isURL(f.endpoint, this.validadeIsURLOptions)) {
+                    if (!validator.isURL(f.endpoint, this._validadeIsURLOptions)) {
                         return false;
                     }
 
@@ -45,17 +45,17 @@ export class VaultViewTreeDataProvider implements vscode.TreeDataProvider<VaultV
                     }
 
                     if (f.auth.method === 'token') {
-                        if (validator.isEmpty(f.auth.token, this.validateIsEmptyOptions)) {
+                        if (validator.isEmpty(f.auth.token, this._validateIsEmptyOptions)) {
                             return false;
                         }
                     } else if (f.auth.method === 'username') {
-                        if (validator.isEmpty(f.auth.mountPoint, this.validateIsEmptyOptions)) {
+                        if (validator.isEmpty(f.auth.mountPoint, this._validateIsEmptyOptions)) {
                             return false;
                         }
-                        if (validator.isEmpty(f.auth.username, this.validateIsEmptyOptions)) {
+                        if (validator.isEmpty(f.auth.username, this._validateIsEmptyOptions)) {
                             return false;
                         }
-                        if (validator.isEmpty(f.auth.password, this.validateIsEmptyOptions)) {
+                        if (validator.isEmpty(f.auth.password, this._validateIsEmptyOptions)) {
                             return false;
                         }
                     }
@@ -66,8 +66,8 @@ export class VaultViewTreeDataProvider implements vscode.TreeDataProvider<VaultV
                 }
             });
 
-        const oldVaultViewServerTreeItens = this.vaultViewServerTreeItens;
-        this.vaultViewServerTreeItens = validVaultConfigurations
+        const oldVaultViewServerTreeItens = this._vaultViewServerTreeItens;
+        this._vaultViewServerTreeItens = validVaultConfigurations
             .reverse()
             .reduce((acc: model.VaultConfiguration[], r) => {
                 if (acc.some(s => s.name === r.name)) {
@@ -77,12 +77,12 @@ export class VaultViewTreeDataProvider implements vscode.TreeDataProvider<VaultV
             }, [])
             .reverse()
             .map(m => {
-                const vaultViewServerTreeItem = this.vaultViewServerTreeItens.find(f => f.isVaultConfiguration(m));
+                const vaultViewServerTreeItem = this._vaultViewServerTreeItens.find(f => f.isVaultConfiguration(m));
                 return vaultViewServerTreeItem || new VaultViewServerTreeItem(new model.VaultConnection(m));
             });
 
         for (const oldVaultViewServerTreeItem of oldVaultViewServerTreeItens) {
-            if (!this.vaultViewServerTreeItens.some(s => s === oldVaultViewServerTreeItem)) {
+            if (!this._vaultViewServerTreeItens.some(s => s === oldVaultViewServerTreeItem)) {
                 oldVaultViewServerTreeItem.disconnect();
             }
         }
@@ -97,7 +97,7 @@ export class VaultViewTreeDataProvider implements vscode.TreeDataProvider<VaultV
     getChildren(element?: VaultViewTreeItem): vscode.ProviderResult<VaultViewTreeItem[]> {
         let providerResult: vscode.ProviderResult<VaultViewTreeItem[]>;
         if (element === undefined) {
-            providerResult = this.vaultViewServerTreeItens;
+            providerResult = this._vaultViewServerTreeItens;
         } else if (element.children === undefined) {
             if (element.collapsibleState === vscode.TreeItemCollapsibleState.Collapsed) {
                 this.refresh(element);

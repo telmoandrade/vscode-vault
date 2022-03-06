@@ -6,7 +6,7 @@ RUN apt update && export DEBIAN_FRONTEND=noninteractive \
         bash-completion \
     && apt clean
 
-RUN su node -c "npm install -g yo generator-code vsce"
+RUN su node -c "npm install -g npm vsce"
 
 USER node
 RUN echo "alias ll='ls -laF'" > ~/.bash_aliases

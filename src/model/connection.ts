@@ -12,68 +12,68 @@ interface VaultToken {
 }
 
 export class VaultConnection implements vscode.Disposable {
-    private tokenTimer: NodeJS.Timer | null = null;
+    private _tokenTimer: NodeJS.Timer | null = null;
 
     constructor(
-        private readonly vaultConfiguration: VaultConfiguration,
-        private vaultClient?: nv.client
+        private readonly _vaultConfiguration: VaultConfiguration,
+        private _vaultClient?: nv.client
     ) {
-        const endpointUrl = new url.URL(vaultConfiguration.endpoint);
+        const endpointUrl = new url.URL(_vaultConfiguration.endpoint);
 
-        vaultConfiguration.endpoint = url.format(endpointUrl).replace(/\/$/, '');
+        _vaultConfiguration.endpoint = url.format(endpointUrl).replace(/\/$/, '');
     }
 
     isVaultConfiguration(vaultConfiguration: VaultConfiguration): boolean {
         const endpointUrl = new url.URL(vaultConfiguration.endpoint);
         const endpoint = url.format(endpointUrl).replace(/\/$/, '');
 
-        return this.vaultConfiguration.name === vaultConfiguration.name &&
-            this.vaultConfiguration.endpoint === endpoint &&
-            this.vaultConfiguration.auth.method === vaultConfiguration.auth.method &&
-            this.vaultConfiguration.auth.token === vaultConfiguration.auth.token &&
-            this.vaultConfiguration.auth.mountPoint === vaultConfiguration.auth.mountPoint &&
-            this.vaultConfiguration.auth.username === vaultConfiguration.auth.username &&
-            this.vaultConfiguration.auth.password === vaultConfiguration.auth.password;
+        return this._vaultConfiguration.name === vaultConfiguration.name &&
+            this._vaultConfiguration.endpoint === endpoint &&
+            this._vaultConfiguration.auth.method === vaultConfiguration.auth.method &&
+            this._vaultConfiguration.auth.token === vaultConfiguration.auth.token &&
+            this._vaultConfiguration.auth.mountPoint === vaultConfiguration.auth.mountPoint &&
+            this._vaultConfiguration.auth.username === vaultConfiguration.auth.username &&
+            this._vaultConfiguration.auth.password === vaultConfiguration.auth.password;
     }
 
     get name(): string {
-        return this.vaultConfiguration.name;
+        return this._vaultConfiguration.name;
     }
 
     async login(returnException: boolean = true): Promise<void> {
         try {
-            this.vaultClient = nv({
-                endpoint: this.vaultConfiguration.endpoint,
+            this._vaultClient = nv({
+                endpoint: this._vaultConfiguration.endpoint,
                 requestOptions: {
                     followAllRedirects: true,
                     strictSSL: true
                 }
             });
-            this.vaultClient.generateFunction('internalMounts', {
+            this._vaultClient.generateFunction('internalMounts', {
                 method: 'GET',
                 path: '/sys/internal/ui/mounts',
             });
 
-            if (this.vaultConfiguration.auth.method === 'token') {
-                this.vaultClient.token = this.vaultConfiguration.auth.token;
-                const tokenLookupResult = await this.vaultClient.tokenLookupSelf();
+            if (this._vaultConfiguration.auth.method === 'token') {
+                this._vaultClient.token = this._vaultConfiguration.auth.token;
+                const tokenLookupResult = await this._vaultClient.tokenLookupSelf();
 
-                this.cacheVaultToken({
+                this._cacheVaultToken({
                     id: tokenLookupResult.data.id,
                     renewable: tokenLookupResult.data.renewable,
                     ttl: tokenLookupResult.data.ttl
                 });
 
-            } else if (this.vaultConfiguration.auth.method === 'username') {
+            } else if (this._vaultConfiguration.auth.method === 'username') {
                 /* eslint-disable @typescript-eslint/naming-convention */
-                const userpassLoginResult = await this.vaultClient.userpassLogin({
-                    mount_point: this.vaultConfiguration.auth.mountPoint,
-                    username: this.vaultConfiguration.auth.username,
-                    password: this.vaultConfiguration.auth.password
+                const userpassLoginResult = await this._vaultClient.userpassLogin({
+                    mount_point: this._vaultConfiguration.auth.mountPoint,
+                    username: this._vaultConfiguration.auth.username,
+                    password: this._vaultConfiguration.auth.password
                 });
                 /* eslint-enable @typescript-eslint/naming-convention */
 
-                this.cacheVaultToken({
+                this._cacheVaultToken({
                     id: userpassLoginResult.auth.client_token,
                     renewable: userpassLoginResult.auth.renewable,
                     ttl: userpassLoginResult.auth.lease_duration
@@ -91,23 +91,25 @@ export class VaultConnection implements vscode.Disposable {
     }
 
     async mounts(): Promise<model.VaultMount[]> {
-        const _vaultClient: any = this.vaultClient;
-        const mounts: any = await _vaultClient?.internalMounts();
+        const vaultClient: any = this._vaultClient;
+        const mounts: any = await vaultClient?.internalMounts();
         return Object.keys(mounts.data.secret)
             .filter(key => ['kv', 'cubbyhole'].includes(mounts.data.secret[key].type))
             .map(key => ({
+                label: key.replace(/\/$/, ''),
                 name: key.replace(/\/$/, ''),
                 type: mounts.data.secret[key].type,
-                version: mounts.data.secret[key].options?.version
+                version: mounts.data.secret[key].options?.version,
+                subFolder: ''
             }));
     }
 
     async secrets(vaultMount: model.VaultMount): Promise<model.VaultSecret[]> {
         const path = vaultMount.type === 'kv' && vaultMount.version === '2' ?
-            `${vaultMount.name}/metadata/`
+            `${vaultMount.name}/metadata/${vaultMount.subFolder}`
             : vaultMount.name;
 
-        const secrets: any = await this.vaultClient?.list(path).catch(err => {
+        const secrets: any = await this._vaultClient?.list(path).catch(err => {
             if (err?.response?.statusCode === 404) {
                 return { data: { keys: [] } };
             } else {
@@ -127,7 +129,7 @@ export class VaultConnection implements vscode.Disposable {
             `${vaultSecret.mount.name}/data/${vaultSecret.name}`
             : `${vaultSecret.mount.name}/${vaultSecret.name}`;
 
-        const result: any = await this.vaultClient?.read(path).catch(err => {
+        const result: any = await this._vaultClient?.read(path).catch(err => {
             if (err?.response?.statusCode === 404) {
                 return { data: { keys: [] } };
             } else {
@@ -185,12 +187,12 @@ export class VaultConnection implements vscode.Disposable {
                 value: flattened[key]
             }))
             .sort((a, b) => a.key > b.key ? 1 : a.key < b.key ? -1 : 0);
-   }
+    }
 
-    private async renewToken(): Promise<void> {
+    private async _renewToken(): Promise<void> {
         try {
-            const tokenRenewResult = await this.vaultClient?.tokenRenewSelf();
-            this.cacheVaultToken({
+            const tokenRenewResult = await this._vaultClient?.tokenRenewSelf();
+            this._cacheVaultToken({
                 id: tokenRenewResult.auth.client_token,
                 renewable: tokenRenewResult.auth.renewable,
                 ttl: tokenRenewResult.auth.lease_duration
@@ -200,13 +202,13 @@ export class VaultConnection implements vscode.Disposable {
         }
     }
 
-    private cacheVaultToken(vaultToken: VaultToken): void {
+    private _cacheVaultToken(vaultToken: VaultToken): void {
         let action: string | null = null;
-        let callback = () => {};
+        let callback = () => { };
         let ms: number = 0;
         if (vaultToken.renewable === true) {
             action = 'renewal';
-            callback = () => this.renewToken();
+            callback = () => this._renewToken();
             ms = 900 * vaultToken.ttl;
         } else if (vaultToken.ttl > 0) {
             action = 'login';
@@ -215,12 +217,12 @@ export class VaultConnection implements vscode.Disposable {
         }
 
         if (action) {
-            this.tokenTimer = setTimeout(callback, ms);
+            this._tokenTimer = setTimeout(callback, ms);
         }
     }
 
     dispose(): any {
-        this.tokenTimer && clearTimeout(this.tokenTimer);
-        this.vaultClient && (this.vaultClient.token = '');
+        this._tokenTimer && clearTimeout(this._tokenTimer);
+        this._vaultClient && (this._vaultClient.token = '');
     }
 }

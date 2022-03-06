@@ -6,18 +6,25 @@ import { VaultViewEmptyTreeItem } from './empty-tree-view';
 import { VaultViewSecretTreeItem } from './secret-tree-view';
 
 export class VaultViewMountTreeItem extends VaultViewTreeItem {
-    constructor(private vaultMount: model.VaultMount, parent: VaultViewTreeItem) {
-        super(vaultMount.name, parent);
+    constructor(private _vaultMount: model.VaultMount, parent: VaultViewTreeItem) {
+        super(_vaultMount.label, parent);
+
         this.contextValue = 'mount';
-        this.iconPath = new vscode.ThemeIcon('folder-opened');
+        this.iconPath = new vscode.ThemeIcon('archive');
+
+        if (_vaultMount.subFolder !== '') {
+            this.contextValue = 'subfolder';
+            this.iconPath = new vscode.ThemeIcon('folder-opened');
+        }
+
         this.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
     }
 
     async refresh(returnException?: boolean): Promise<boolean> {
         try {
-            const secrets = await this?.connection?.secrets(this.vaultMount) || [];
+            const secrets = await this?.connection?.secrets(this._vaultMount) || [];
 
-            const oldSecrets = this.children;
+            const oldChildren = this.children;
             this.children = undefined;
             if (secrets.length === 0) {
                 this.children = [
@@ -25,8 +32,14 @@ export class VaultViewMountTreeItem extends VaultViewTreeItem {
                 ];
             } else {
                 for (const secret of secrets) {
-                    const secretView = oldSecrets?.find(f => f.label === secret.name);
-                    this.addChild(secretView || new VaultViewSecretTreeItem(secret, this));
+                    const secretView = oldChildren?.find(f => f.label === secret.name);
+                    if (secret.name.match(/\/$/)) {
+                        const vaultMount = { ...this._vaultMount, label: secret.name };
+                        vaultMount.subFolder += secret.name;
+                        this.addChild(secretView || new VaultViewMountTreeItem(vaultMount, this));
+                    } else {
+                        this.addChild(secretView || new VaultViewSecretTreeItem(secret, this));
+                    }
                 }
             }
         } catch (err: unknown) {
