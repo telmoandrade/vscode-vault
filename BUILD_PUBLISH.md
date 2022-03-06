@@ -20,3 +20,15 @@ yo code
 # ? Do you want to open the new folder with Visual Studio Code? Open with `code`
 
 ```
+
+
+## Build and publish
+
+```
+npm run lint
+
+npm run package
+
+vsce publish
+
+```
