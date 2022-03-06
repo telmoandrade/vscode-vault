@@ -10,31 +10,27 @@ const PATH_SEPARATOR = '/';
 export abstract class VaultViewTreeItem extends vscode.TreeItem {
     private _children: VaultViewTreeItem[] | undefined;
     private _name: string;
-    readonly parent: VaultViewTreeItem | undefined;
 
     abstract refresh(returnException?: boolean): Promise<boolean>;
 
-    constructor(label: string, parent?: VaultViewTreeItem) {
+    constructor(label: string, readonly parent?: VaultViewTreeItem) {
         super(label);
         this._name = label;
         this.id = ((parent?.id || PATH_SEPARATOR) + label).replace(OPTIONAL_TRAILING_SLASH, PATH_SEPARATOR);
-        this.parent = parent;
     }
 
     get children(): VaultViewTreeItem[] | undefined {
         return this._children ? [...this._children] : undefined;
     }
 
-    set children(value: VaultViewTreeItem[] | undefined ) {
+    set children(value: VaultViewTreeItem[] | undefined) {
         this._children = value ? [...value] : undefined;
     }
 
     get connection(): model.VaultConnection | undefined {
         return this?.parent?.connection;
     }
-    get name(): string{
-        return this._name;
-    }
+
     addChild(child: VaultViewTreeItem) {
         if (this._children) {
             const names = this._children.map(m => m._name);

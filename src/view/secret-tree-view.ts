@@ -4,8 +4,8 @@ import * as model from '../model';
 import { VaultViewTreeItem } from "./tree-item";
 
 export class VaultViewSecretTreeItem extends VaultViewTreeItem {
-    constructor(private vaultSecret: model.VaultSecret, parent: VaultViewTreeItem) {
-        super(vaultSecret.name, parent);
+    constructor(private _vaultSecret: model.VaultSecret, parent: VaultViewTreeItem) {
+        super(_vaultSecret.name, parent);
         this.contextValue = 'secret';
         this.iconPath = new vscode.ThemeIcon('symbol-object');
         this.children = [];
@@ -16,6 +16,6 @@ export class VaultViewSecretTreeItem extends VaultViewTreeItem {
     }
 
     async read(): Promise<model.VaultData[]> {
-        return await this?.connection?.data(this.vaultSecret)  || [];
+        return await this?.connection?.data(this._vaultSecret) || [];
     }
 }
