@@ -29,6 +29,7 @@ export class VaultConnection implements vscode.Disposable {
 
         return this._vaultConfiguration.name === vaultConfiguration.name &&
             this._vaultConfiguration.endpoint === endpoint &&
+            this._vaultConfiguration.namespace === vaultConfiguration.namespace &&
             this._vaultConfiguration.auth.method === vaultConfiguration.auth.method &&
             this._vaultConfiguration.auth.token === vaultConfiguration.auth.token &&
             this._vaultConfiguration.auth.mountPoint === vaultConfiguration.auth.mountPoint &&
@@ -44,6 +45,7 @@ export class VaultConnection implements vscode.Disposable {
         try {
             this._vaultClient = nv({
                 endpoint: this._vaultConfiguration.endpoint,
+                namespace: this._vaultConfiguration.namespace,
                 requestOptions: {
                     followAllRedirects: true,
                     strictSSL: true

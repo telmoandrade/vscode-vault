@@ -1,6 +1,7 @@
 export interface VaultConfiguration {
     name: string;
     endpoint: string;
+    namespace: string;
     auth: VaultConfigurationAuth;
 }
 
