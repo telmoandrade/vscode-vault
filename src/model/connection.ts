@@ -128,8 +128,8 @@ export class VaultConnection implements vscode.Disposable {
         const isKv2 = vaultSecret.mount.type === 'kv' && vaultSecret.mount.version === '2';
 
         const path = isKv2 ?
-            `${vaultSecret.mount.name}/data/${vaultSecret.name}`
-            : `${vaultSecret.mount.name}/${vaultSecret.name}`;
+            `${vaultSecret.mount.name}/data/${vaultSecret.mount.subFolder}${vaultSecret.name}`
+            : `${vaultSecret.mount.name}/${vaultSecret.mount.subFolder}${vaultSecret.name}`;
 
         const result: any = await this._vaultClient?.read(path).catch(err => {
             if (err?.response?.statusCode === 404) {
